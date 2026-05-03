@@ -51,7 +51,8 @@ class OpenAiLlmClient(
     private fun OpenAiChatModel.OpenAiChatModelBuilder.applyDeepSeekV4Compatibility():
             OpenAiChatModel.OpenAiChatModelBuilder {
         if (isDeepSeekV4Model()) {
-            customParameters(mapOf("thinking" to mapOf("type" to "disabled")))
+            returnThinking(true)
+            sendThinking(true)
         }
         return this
     }
@@ -59,7 +60,8 @@ class OpenAiLlmClient(
     private fun OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder.applyDeepSeekV4Compatibility():
             OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder {
         if (isDeepSeekV4Model()) {
-            customParameters(mapOf("thinking" to mapOf("type" to "disabled")))
+            returnThinking(true)
+            sendThinking(true)
         }
         return this
     }
@@ -123,6 +125,7 @@ internal fun ChatResponse.toLlmResponse(): LlmResponse {
     val aiMessage = aiMessage()
     return LlmResponse(
         text = aiMessage.text(),
+        thinking = aiMessage.thinking(),
         toolExecutionRequests = aiMessage.toolExecutionRequests() ?: emptyList(),
         tokenUsage = tokenUsage()
     )

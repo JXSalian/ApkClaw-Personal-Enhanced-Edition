@@ -351,15 +351,11 @@ class DefaultAgentService : AgentService {
             llmResponse.tokenUsage?.totalTokenCount()?.let { totalTokens += it }
 
             // 将 AI 消息添加到历史（需要构造 AiMessage）
-            val aiMessage = if (llmResponse.hasToolExecutionRequests()) {
-                if (llmResponse.text.isNullOrEmpty()) {
-                    AiMessage.from(llmResponse.toolExecutionRequests)
-                } else {
-                    AiMessage.from(llmResponse.text, llmResponse.toolExecutionRequests)
-                }
-            } else {
-                AiMessage.from(llmResponse.text ?: "")
-            }
+            val aiMessage = AiMessage.builder()
+                .text(llmResponse.text)
+                .thinking(llmResponse.thinking)
+                .toolExecutionRequests(llmResponse.toolExecutionRequests)
+                .build()
             messages.add(aiMessage)
 
             // 非流式模式下推送思考内容
