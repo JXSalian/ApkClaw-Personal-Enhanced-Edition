@@ -192,6 +192,8 @@ object KVUtils {
     private const val KEY_LLM_API_KEY = "KEY_LLM_API_KEY"
     private const val KEY_LLM_BASE_URL = "KEY_LLM_BASE_URL"
     private const val KEY_LLM_MODEL_NAME = "KEY_LLM_MODEL_NAME"
+    private const val KEY_AGENT_MAX_ITERATIONS = "KEY_AGENT_MAX_ITERATIONS"
+    private const val DEFAULT_AGENT_MAX_ITERATIONS = 60
 
     fun getLlmApiKey(): String = getString(KEY_LLM_API_KEY, "")
     fun setLlmApiKey(value: String) = putString(KEY_LLM_API_KEY, value)
@@ -199,6 +201,8 @@ object KVUtils {
     fun setLlmBaseUrl(value: String) = putString(KEY_LLM_BASE_URL, value)
     fun getLlmModelName(): String = getString(KEY_LLM_MODEL_NAME, "")
     fun setLlmModelName(value: String) = putString(KEY_LLM_MODEL_NAME, value)
+    fun getAgentMaxIterations(): Int = getInt(KEY_AGENT_MAX_ITERATIONS, DEFAULT_AGENT_MAX_ITERATIONS)
+    fun setAgentMaxIterations(value: Int) = putInt(KEY_AGENT_MAX_ITERATIONS, value)
 
     /** 是否已配置 LLM（API Key 非空即视为已配置） */
     fun hasLlmConfig(): Boolean = getLlmApiKey().isNotEmpty()

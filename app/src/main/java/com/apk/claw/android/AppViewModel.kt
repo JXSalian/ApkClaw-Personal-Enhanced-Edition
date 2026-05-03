@@ -53,12 +53,13 @@ class AppViewModel : ViewModel() {
     fun getAgentConfig(): AgentConfig {
         var baseUrl = KVUtils.getLlmBaseUrl().trim()
         if (baseUrl.isEmpty()) baseUrl = "https://api.openai.com/v1"
+        val maxIterations = KVUtils.getAgentMaxIterations().coerceAtLeast(1)
         return AgentConfig.Builder()
             .apiKey(KVUtils.getLlmApiKey())
             .baseUrl(baseUrl)
             .modelName(KVUtils.getLlmModelName())
             .temperature(0.1)
-            .maxIterations(60)
+            .maxIterations(maxIterations)
             .build()
     }
 

@@ -66,6 +66,37 @@
     <string name="settings_title">Settings</string>
     <string name="settings_group_channel">Channels</string>
     <string name="settings_group_model">Model</string>
+    <string name="menu_session_memory">Session &amp; Memory</string>
+
+    <string name="session_memory_title">Session &amp; Memory</string>
+    <string name="session_memory_tip">Enable this to preserve session-level habits and error experience. The current session will be injected into future tasks as a lightweight memory reference.</string>
+    <string name="session_memory_enable_session">Enable Session Context</string>
+    <string name="session_memory_enable_memory">Enable Condensed Memory</string>
+    <string name="session_memory_current_session">Current Session</string>
+    <string name="session_memory_new_session">Create New Session</string>
+    <string name="session_memory_new_session_hint">e.g. Daily WeChat Ops</string>
+    <string name="session_memory_create_session">Create and Switch</string>
+    <string name="session_memory_edit_session_name">Selected Session Name</string>
+    <string name="session_memory_edit_session_name_hint">Edit the current session name</string>
+    <string name="session_memory_preview_edit">Preview &amp; Edit</string>
+    <string name="session_memory_condensed_summary">Condensed Memory</string>
+    <string name="session_memory_condensed_summary_hint">Edit the condensed memory summary directly</string>
+    <string name="session_memory_saved">Session memory settings saved</string>
+    <string name="session_memory_created">Created session: %1$s</string>
+    <string name="session_memory_choose_session">Please choose a session</string>
+    <string name="session_memory_empty_summary">No condensed memory yet. It will accumulate after successful or failed tasks.</string>
+    <string name="session_memory_summary_name">Session: %1$s</string>
+    <string name="session_memory_summary_status">Status: %1$s</string>
+    <string name="session_memory_summary_flags">Session %1$s · Memory %2$s</string>
+    <string name="session_memory_enabled">Enabled</string>
+    <string name="session_memory_disabled">Disabled</string>
+    <string name="session_memory_recent_tasks">Recent Session Tasks</string>
+    <string name="session_memory_recent_tasks_hint">One line per session record</string>
+    <string name="session_memory_habit_notes">Habit Notes</string>
+    <string name="session_memory_habit_notes_hint">One line per habit or preference</string>
+    <string name="session_memory_error_lessons">Error Lessons</string>
+    <string name="session_memory_error_lessons_hint">One line per error lesson</string>
+    <string name="session_memory_both_disabled">Both session context and condensed memory are disabled.</string>
 
     <!-- Unbind -->
     <string name="unbind_title">Disconnect</string>
@@ -117,8 +148,11 @@
     <string name="llm_config_base_url_hint">e.g. https://api.openai.com/v1 (leave empty for OpenAI default)</string>
     <string name="llm_config_model_name">Model Name</string>
     <string name="llm_config_model_name_hint">e.g. gpt-4o, gpt-4o-mini, claude-3-5-sonnet</string>
+    <string name="llm_config_max_iterations">Max Iterations</string>
+    <string name="llm_config_max_iterations_hint">e.g. 60</string>
     <string name="llm_config_saved">LLM configuration saved</string>
     <string name="llm_config_api_key_required">Please enter API Key</string>
+    <string name="llm_config_max_iterations_invalid">Please enter a max iterations value greater than 0</string>
     <string name="menu_llm_config">LLM Config</string>
 
     <!-- Settings Menu -->

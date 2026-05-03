@@ -7,6 +7,7 @@ import com.apk.claw.android.agent.AgentServiceFactory
 import com.apk.claw.android.channel.Channel
 import com.apk.claw.android.channel.ChannelManager
 import com.apk.claw.android.floating.FloatingCircleManager
+import com.apk.claw.android.session.SessionMemoryManager
 import com.apk.claw.android.service.ClawAccessibilityService
 import com.apk.claw.android.tool.ToolResult
 import com.apk.claw.android.utils.XLog
@@ -132,6 +133,8 @@ class TaskOrchestrator(
         ClawAccessibilityService.getInstance()?.pressHome()
 
         FloatingCircleManager.showTaskNotify(task, channel)
+        val effectiveTask = SessionMemoryManager.buildTaskPrompt(task)
+        var finishSummary = ""
 
         // 每轮消息聚合缓冲：thinking + toolResult 攒成一条，减少发送次数
         val roundBuffer = StringBuilder()
@@ -143,7 +146,7 @@ class TaskOrchestrator(
             }
         }
 
-        agentService.executeTask(task, object : AgentCallback {
+        agentService.executeTask(effectiveTask, object : AgentCallback {
             override fun onLoopStart(round: Int) {
                 // 新一轮开始前，flush 上一轮积攒的消息
                 flushRoundBuffer()
@@ -172,6 +175,7 @@ class TaskOrchestrator(
                 }
                 XLog.e(TAG, "onToolResult: $toolName, $status $data")
                 if (toolId == "finish" && (result.data?.isNotEmpty() ?: false)) {
+                    finishSummary = result.data ?: ""
                     // finish 的结果单独发，不合并（这是最终回复）
                     flushRoundBuffer()
                     ChannelManager.sendMessage(channel, result.data, messageID)
@@ -186,6 +190,7 @@ class TaskOrchestrator(
 
             override fun onComplete(round: Int, finalAnswer: String, totalTokens: Int) {
                 XLog.i(TAG, "onComplete: 轮数=$round, totalTokens=$totalTokens, answer=$finalAnswer")
+                SessionMemoryManager.recordSuccess(task, finishSummary.ifBlank { finalAnswer })
                 flushRoundBuffer()
                 releaseTask()
                 ChannelManager.flushMessages(channel)
@@ -195,6 +200,7 @@ class TaskOrchestrator(
 
             override fun onError(round: Int, error: Exception, totalTokens: Int) {
                 XLog.e(TAG, "onError: ${error.message}, totalTokens=$totalTokens", error)
+                SessionMemoryManager.recordFailure(task, error.message ?: "未知错误")
                 flushRoundBuffer()
                 releaseTask()
                 ChannelManager.sendMessage(channel, ClawApplication.instance.getString(R.string.channel_msg_task_error, error.message), messageID)
@@ -205,6 +211,7 @@ class TaskOrchestrator(
 
             override fun onSystemDialogBlocked(round: Int, totalTokens: Int) {
                 XLog.w(TAG, "onSystemDialogBlocked: round=$round, totalTokens=$totalTokens")
+                SessionMemoryManager.recordFailure(task, ClawApplication.instance.getString(R.string.channel_msg_system_dialog_blocked))
                 flushRoundBuffer()
                 releaseTask()
                 ChannelManager.sendMessage(channel, ClawApplication.instance.getString(R.string.channel_msg_system_dialog_blocked), messageID)
