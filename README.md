@@ -51,6 +51,16 @@ An AI-powered Android automation app that lets an LLM Agent control Android devi
 
 ![Star History Chart](https://api.star-history.com/svg?repos=apkclaw-team/ApkClaw)
 
+## Build
+
+For a reproducible Windows debug build, use the project script instead of calling Gradle directly:
+
+```powershell
+.\build-debug.bat
+```
+
+The script prefers `APKCLAW_JBR`, then `ANDROID_STUDIO_JBR`, then `JAVA_HOME`, and finally common Android Studio JBR locations. It only accepts a Java runtime that contains both `bin/java.exe` and `bin/jlink.exe`, then pins Gradle to that JBR and disables Java auto-detection for the current build.
+
 ## Core Execution Flow
 
 1. **User** sends a natural language message through any connected channel
@@ -81,14 +91,15 @@ The agent follows an **Observe → Think → Act → Verify** protocol:
 
 Pluggable LLM backends via `LlmClientFactory`:
 
-| Provider | Client Class | Model Builder |
-|----------|-------------|---------------|
-| OpenAI-compatible | `OpenAiLlmClient` | `OpenAiChatModel` / `OpenAiStreamingChatModel` |
-| Anthropic | `AnthropicLlmClient` | `AnthropicChatModel` / `AnthropicStreamingChatModel` |
+| Provider          | Client Class         | Model Builder                                        |
+| ----------------- | -------------------- | ---------------------------------------------------- |
+| OpenAI-compatible | `OpenAiLlmClient`    | `OpenAiChatModel` / `OpenAiStreamingChatModel`       |
+| Anthropic         | `AnthropicLlmClient` | `AnthropicChatModel` / `AnthropicStreamingChatModel` |
 
 Both streaming and non-streaming modes are supported. The HTTP layer uses a custom `OkHttpClientBuilderAdapter` (OkHttp-based) instead of JDK HttpClient for Android compatibility.
 
 **Configuration** (`AgentConfig`):
+
 - `apiKey`: From local settings
 - `baseUrl`: LLM endpoint (default: `https://api.openai.com/v1`)
 - `modelName`: User-selectable
@@ -106,50 +117,53 @@ Both streaming and non-streaming modes are supported. The HTTP layer uses a cust
 Tools are registered in `ToolRegistry` by device type:
 
 ### Common Tools (All Devices)
-| Tool | Description |
-|------|-------------|
-| `get_screen_info` | Get UI hierarchy tree for AI to analyze the current screen |
-| `find_node_info` | Find elements by text or resource ID |
-| `take_screenshot` | Capture current screen as PNG |
-| `input_text` | Input text into the focused field |
-| `open_app` | Open an app by name |
-| `get_installed_apps` | List installed applications |
-| `press_back` / `press_home` | Navigate back / Go to home screen |
-| `open_recent_apps` | Open recent apps |
-| `expand_notifications` / `collapse_notifications` | Expand / Collapse notification shade |
-| `lock_screen` | Lock the screen |
-| `wait` | Wait for a specified duration |
-| `repeat_actions` | Repeat a set of actions |
-| `send_file` | Send a file to the user via channel |
-| `finish` | Complete the task and return a summary |
+
+| Tool                                              | Description                                                |
+| ------------------------------------------------- | ---------------------------------------------------------- |
+| `get_screen_info`                                 | Get UI hierarchy tree for AI to analyze the current screen |
+| `find_node_info`                                  | Find elements by text or resource ID                       |
+| `take_screenshot`                                 | Capture current screen as PNG                              |
+| `input_text`                                      | Input text into the focused field                          |
+| `open_app`                                        | Open an app by name                                        |
+| `get_installed_apps`                              | List installed applications                                |
+| `press_back` / `press_home`                       | Navigate back / Go to home screen                          |
+| `open_recent_apps`                                | Open recent apps                                           |
+| `expand_notifications` / `collapse_notifications` | Expand / Collapse notification shade                       |
+| `lock_screen`                                     | Lock the screen                                            |
+| `wait`                                            | Wait for a specified duration                              |
+| `repeat_actions`                                  | Repeat a set of actions                                    |
+| `send_file`                                       | Send a file to the user via channel                        |
+| `finish`                                          | Complete the task and return a summary                     |
 
 ### Phone-Specific Tools
-| Tool | Description |
-|------|-------------|
-| `tap` | Tap at coordinates (x, y) |
-| `long_press` | Long press at coordinates |
-| `swipe` | Swipe from point A to point B |
-| `click_by_text` | Click an element by visible text |
-| `click_by_id` | Click an element by resource ID |
+
+| Tool                  | Description                        |
+| --------------------- | ---------------------------------- |
+| `tap`                 | Tap at coordinates (x, y)          |
+| `long_press`          | Long press at coordinates          |
+| `swipe`               | Swipe from point A to point B      |
+| `click_by_text`       | Click an element by visible text   |
+| `click_by_id`         | Click an element by resource ID    |
 | `search_app_in_store` | Search for an app in the app store |
 
 Each tool extends `BaseTool`, implements `execute(Map<String, Any>): ToolResult`, and provides bilingual (Chinese/English) descriptions with typed parameter declarations.
 
 ## Channel System
 
-| Channel | Protocol | Required Credentials |
-|---------|----------|---------------------|
-| DingTalk | App Stream Client | Client ID + Client Secret |
-| Feishu | OAPI SDK | App ID + App Secret |
-| QQ | QQ Bot API | App ID + App Secret |
-| Discord | Gateway WebSocket + REST | Bot Token |
-| Telegram | Bot HTTP API | Bot Token |
+| Channel  | Protocol                 | Required Credentials      |
+| -------- | ------------------------ | ------------------------- |
+| DingTalk | App Stream Client        | Client ID + Client Secret |
+| Feishu   | OAPI SDK                 | App ID + App Secret       |
+| QQ       | QQ Bot API               | App ID + App Secret       |
+| Discord  | Gateway WebSocket + REST | Bot Token                 |
+| Telegram | Bot HTTP API             | Bot Token                 |
 
 Channel credentials can be configured via the in-app settings page or the LAN HTTP server (`http://<device-ip>:9527`).
 
 ## Accessibility Service
 
 `ClawAccessibilityService` (Java) is the core device interaction layer:
+
 - **Gestures**: Tap, swipe, long press via `dispatchGesture()`
 - **Node Traversal**: UI hierarchy tree via `getRootInActiveWindow()`
 - **Key Injection**: Home, Back, Recents via `performGlobalAction()`
@@ -161,11 +175,11 @@ Channel credentials can be configured via the in-app settings page or the LAN HT
 
 A NanoHTTPD-based HTTP server runs on port 9527 for convenient configuration from a PC browser:
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/` | GET | Configuration web page |
+| Endpoint        | Method   | Purpose                         |
+| --------------- | -------- | ------------------------------- |
+| `/`             | GET      | Configuration web page          |
 | `/api/channels` | GET/POST | Read/update channel credentials |
-| `/api/llm` | GET/POST | Read/update LLM configuration |
+| `/api/llm`      | GET/POST | Read/update LLM configuration   |
 
 Secrets are masked (only last 4 characters shown) when retrieved via GET. Debug builds additionally expose `/debug.html` with a tool execution console.
 
@@ -232,41 +246,41 @@ cd ApkClaw
 
 **AI / Agent**
 
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| [LangChain4j](https://github.com/langchain4j/langchain4j) | 1.12.2 | Agent orchestration, tool definitions, LLM integration |
+| Dependency                                                | Version | Purpose                                                |
+| --------------------------------------------------------- | ------- | ------------------------------------------------------ |
+| [LangChain4j](https://github.com/langchain4j/langchain4j) | 1.12.2  | Agent orchestration, tool definitions, LLM integration |
 
 **Messaging Channels**
 
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| [DingTalk Stream Client](https://github.com/open-dingtalk/dingtalk-stream-sdk-java) | 1.3.12 | DingTalk channel |
-| [Feishu OAPI SDK](https://github.com/larksuite/oapi-sdk-java) | 2.5.3 | Feishu / Lark channel |
+| Dependency                                                                          | Version | Purpose               |
+| ----------------------------------------------------------------------------------- | ------- | --------------------- |
+| [DingTalk Stream Client](https://github.com/open-dingtalk/dingtalk-stream-sdk-java) | 1.3.12  | DingTalk channel      |
+| [Feishu OAPI SDK](https://github.com/larksuite/oapi-sdk-java)                       | 2.5.3   | Feishu / Lark channel |
 
 **Networking**
 
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| [OkHttp](https://github.com/square/okhttp) | 4.12.0 | HTTP client for LLM calls |
-| [Retrofit](https://github.com/square/retrofit) | 2.11.0 | REST API client |
-| [NanoHTTPD](https://github.com/NanoHttpd/nanohttpd) | 2.3.1 | LAN config & debug HTTP server |
+| Dependency                                          | Version | Purpose                        |
+| --------------------------------------------------- | ------- | ------------------------------ |
+| [OkHttp](https://github.com/square/okhttp)          | 4.12.0  | HTTP client for LLM calls      |
+| [Retrofit](https://github.com/square/retrofit)      | 2.11.0  | REST API client                |
+| [NanoHTTPD](https://github.com/NanoHttpd/nanohttpd) | 2.3.1   | LAN config & debug HTTP server |
 
 **Storage & Utilities**
 
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| [MMKV](https://github.com/Tencent/MMKV) | 2.3.0 | High-performance local key-value storage |
-| [Gson](https://github.com/google/gson) | 2.13.2 | JSON serialization |
-| [ZXing](https://github.com/zxing/zxing) | 3.5.3 | QR code generation |
-| [UtilCode](https://github.com/Blankj/AndroidUtilCode) | 1.31.1 | Android utility functions |
+| Dependency                                            | Version | Purpose                                  |
+| ----------------------------------------------------- | ------- | ---------------------------------------- |
+| [MMKV](https://github.com/Tencent/MMKV)               | 2.3.0   | High-performance local key-value storage |
+| [Gson](https://github.com/google/gson)                | 2.13.2  | JSON serialization                       |
+| [ZXing](https://github.com/zxing/zxing)               | 3.5.3   | QR code generation                       |
+| [UtilCode](https://github.com/Blankj/AndroidUtilCode) | 1.31.1  | Android utility functions                |
 
 **UI**
 
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| [Glide](https://github.com/bumptech/glide) | 5.0.5 | Image loading |
-| [EasyFloat](https://github.com/princekin-f/EasyFloat) | 2.0.4 | Floating window |
-| [MultiType](https://github.com/drakeet/MultiType) | 4.3.0 | RecyclerView multi-type adapter |
+| Dependency                                            | Version | Purpose                         |
+| ----------------------------------------------------- | ------- | ------------------------------- |
+| [Glide](https://github.com/bumptech/glide)            | 5.0.5   | Image loading                   |
+| [EasyFloat](https://github.com/princekin-f/EasyFloat) | 2.0.4   | Floating window                 |
+| [MultiType](https://github.com/drakeet/MultiType)     | 4.3.0   | RecyclerView multi-type adapter |
 
 ## License
 

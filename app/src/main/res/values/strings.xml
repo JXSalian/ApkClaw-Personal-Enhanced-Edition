@@ -60,6 +60,7 @@
     <string name="home_cancel_task">Stop current task</string>
     <string name="home_cancel_task_success">AI task stopped</string>
     <string name="home_no_task_running">No task is running</string>
+    <string name="home_version">Version %1$s</string>
 
     <!-- Settings -->
     <string name="settings_title">Settings</string>

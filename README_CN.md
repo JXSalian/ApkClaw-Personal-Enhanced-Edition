@@ -51,6 +51,16 @@ AI 驱动的 Android 自动化应用，通过自然语言让 LLM Agent 操控 An
 
 ![Star History Chart](https://api.star-history.com/svg?repos=apkclaw-team/ApkClaw)
 
+## 构建
+
+在 Windows 上，如果想稳定复现 debug 构建，直接使用项目自带脚本，不要手动拼 Gradle 参数：
+
+```powershell
+.\build-debug.bat
+```
+
+脚本会按顺序尝试 `APKCLAW_JBR`、`ANDROID_STUDIO_JBR`、`JAVA_HOME`，以及常见的 Android Studio JBR 路径。只有同时包含 `bin/java.exe` 和 `bin/jlink.exe` 的 Java 运行时才会被接受，然后脚本会在当前构建中固定使用该 JBR，并关闭 Gradle 的 Java 自动探测。
+
 ## 核心执行流程
 
 1. **用户**通过任意已连接的渠道发送自然语言消息
@@ -81,14 +91,15 @@ Agent 遵循 **观察 → 思考 → 行动 → 验证** 协议：
 
 通过 `LlmClientFactory` 实现可插拔的 LLM 后端：
 
-| 提供商 | 客户端类 | 模型构建器 |
-|--------|---------|-----------|
-| OpenAI 兼容 | `OpenAiLlmClient` | `OpenAiChatModel` / `OpenAiStreamingChatModel` |
-| Anthropic | `AnthropicLlmClient` | `AnthropicChatModel` / `AnthropicStreamingChatModel` |
+| 提供商      | 客户端类             | 模型构建器                                           |
+| ----------- | -------------------- | ---------------------------------------------------- |
+| OpenAI 兼容 | `OpenAiLlmClient`    | `OpenAiChatModel` / `OpenAiStreamingChatModel`       |
+| Anthropic   | `AnthropicLlmClient` | `AnthropicChatModel` / `AnthropicStreamingChatModel` |
 
 均支持流式和非流式模式。HTTP 层使用自定义的 `OkHttpClientBuilderAdapter`（基于 OkHttp）替代 JDK HttpClient 以兼容 Android。
 
 **配置项** (`AgentConfig`)：
+
 - `apiKey`：来自本地设置
 - `baseUrl`：LLM 端点（默认：`https://api.openai.com/v1`）
 - `modelName`：用户可选
@@ -106,50 +117,53 @@ Agent 遵循 **观察 → 思考 → 行动 → 验证** 协议：
 工具按设备类型在 `ToolRegistry` 中注册：
 
 ### 通用工具（所有设备）
-| 工具 | 说明 |
-|------|------|
-| `get_screen_info` | 获取 UI 层级树，供 AI 分析当前界面 |
-| `find_node_info` | 通过文本或资源 ID 查找元素 |
-| `take_screenshot` | 截取当前屏幕为 PNG |
-| `input_text` | 向焦点输入框输入文本 |
-| `open_app` | 通过名称打开应用 |
-| `get_installed_apps` | 获取已安装应用列表 |
-| `press_back` / `press_home` | 返回 / 回到桌面 |
-| `open_recent_apps` | 打开最近任务 |
-| `expand_notifications` / `collapse_notifications` | 展开 / 收起通知栏 |
-| `lock_screen` | 锁屏 |
-| `wait` | 等待指定时长 |
-| `repeat_actions` | 重复执行一组操作 |
-| `send_file` | 通过渠道发送文件给用户 |
-| `finish` | 完成任务并返回总结 |
+
+| 工具                                              | 说明                               |
+| ------------------------------------------------- | ---------------------------------- |
+| `get_screen_info`                                 | 获取 UI 层级树，供 AI 分析当前界面 |
+| `find_node_info`                                  | 通过文本或资源 ID 查找元素         |
+| `take_screenshot`                                 | 截取当前屏幕为 PNG                 |
+| `input_text`                                      | 向焦点输入框输入文本               |
+| `open_app`                                        | 通过名称打开应用                   |
+| `get_installed_apps`                              | 获取已安装应用列表                 |
+| `press_back` / `press_home`                       | 返回 / 回到桌面                    |
+| `open_recent_apps`                                | 打开最近任务                       |
+| `expand_notifications` / `collapse_notifications` | 展开 / 收起通知栏                  |
+| `lock_screen`                                     | 锁屏                               |
+| `wait`                                            | 等待指定时长                       |
+| `repeat_actions`                                  | 重复执行一组操作                   |
+| `send_file`                                       | 通过渠道发送文件给用户             |
+| `finish`                                          | 完成任务并返回总结                 |
 
 ### 手机专属工具
-| 工具 | 说明 |
-|------|------|
-| `tap` | 点击指定坐标 (x, y) |
-| `long_press` | 长按指定坐标 |
-| `swipe` | 从 A 点滑动到 B 点 |
-| `click_by_text` | 通过可见文字点击元素 |
-| `click_by_id` | 通过资源 ID 点击元素 |
+
+| 工具                  | 说明                 |
+| --------------------- | -------------------- |
+| `tap`                 | 点击指定坐标 (x, y)  |
+| `long_press`          | 长按指定坐标         |
+| `swipe`               | 从 A 点滑动到 B 点   |
+| `click_by_text`       | 通过可见文字点击元素 |
+| `click_by_id`         | 通过资源 ID 点击元素 |
 | `search_app_in_store` | 在应用商店中搜索应用 |
 
 每个工具继承 `BaseTool`，实现 `execute(Map<String, Any>): ToolResult`，提供中英文双语描述和类型化参数声明。
 
 ## 渠道系统
 
-| 渠道 | 协议 | 所需凭证 |
-|------|------|----------|
-| 钉钉 | App Stream Client | Client ID + Client Secret |
-| 飞书 | OAPI SDK | App ID + App Secret |
-| QQ | QQ Bot API | App ID + App Secret |
-| Discord | Gateway WebSocket + REST | Bot Token |
-| Telegram | Bot HTTP API | Bot Token |
+| 渠道     | 协议                     | 所需凭证                  |
+| -------- | ------------------------ | ------------------------- |
+| 钉钉     | App Stream Client        | Client ID + Client Secret |
+| 飞书     | OAPI SDK                 | App ID + App Secret       |
+| QQ       | QQ Bot API               | App ID + App Secret       |
+| Discord  | Gateway WebSocket + REST | Bot Token                 |
+| Telegram | Bot HTTP API             | Bot Token                 |
 
 渠道凭证可通过应用内设置页或局域网 HTTP 服务器（`http://<设备IP>:9527`）配置。
 
 ## 无障碍服务
 
 `ClawAccessibilityService`（Java）是设备交互的核心层：
+
 - **手势操作**：通过 `dispatchGesture()` 实现点击、滑动、长按
 - **节点遍历**：通过 `getRootInActiveWindow()` 获取 UI 层级树
 - **按键注入**：通过 `performGlobalAction()` 实现 Home、返回、最近任务
@@ -161,11 +175,11 @@ Agent 遵循 **观察 → 思考 → 行动 → 验证** 协议：
 
 基于 NanoHTTPD 的 HTTP 服务器运行在端口 9527，方便通过 PC 浏览器配置设备：
 
-| 端点 | 方法 | 用途 |
-|------|------|------|
-| `/` | GET | 配置页面 |
-| `/api/channels` | GET/POST | 读取/更新渠道凭证 |
-| `/api/llm` | GET/POST | 读取/更新 LLM 配置 |
+| 端点            | 方法     | 用途               |
+| --------------- | -------- | ------------------ |
+| `/`             | GET      | 配置页面           |
+| `/api/channels` | GET/POST | 读取/更新渠道凭证  |
+| `/api/llm`      | GET/POST | 读取/更新 LLM 配置 |
 
 通过 GET 获取时，敏感信息会做脱敏处理（仅显示末尾 4 位字符）。Debug 构建额外提供 `/debug.html` 工具调试控制台。
 
@@ -232,41 +246,41 @@ cd ApkClaw
 
 **AI / Agent**
 
-| 依赖 | 版本 | 用途 |
-|------|------|------|
+| 依赖                                                      | 版本   | 用途                           |
+| --------------------------------------------------------- | ------ | ------------------------------ |
 | [LangChain4j](https://github.com/langchain4j/langchain4j) | 1.12.2 | Agent 编排、工具定义、LLM 集成 |
 
 **消息渠道**
 
-| 依赖 | 版本 | 用途 |
-|------|------|------|
+| 依赖                                                                                | 版本   | 用途     |
+| ----------------------------------------------------------------------------------- | ------ | -------- |
 | [DingTalk Stream Client](https://github.com/open-dingtalk/dingtalk-stream-sdk-java) | 1.3.12 | 钉钉渠道 |
-| [Feishu OAPI SDK](https://github.com/larksuite/oapi-sdk-java) | 2.5.3 | 飞书渠道 |
+| [Feishu OAPI SDK](https://github.com/larksuite/oapi-sdk-java)                       | 2.5.3  | 飞书渠道 |
 
 **网络**
 
-| 依赖 | 版本 | 用途 |
-|------|------|------|
-| [OkHttp](https://github.com/square/okhttp) | 4.12.0 | HTTP 客户端（LLM 调用） |
-| [Retrofit](https://github.com/square/retrofit) | 2.11.0 | REST API 客户端 |
-| [NanoHTTPD](https://github.com/NanoHttpd/nanohttpd) | 2.3.1 | 局域网配置 & 调试 HTTP 服务器 |
+| 依赖                                                | 版本   | 用途                          |
+| --------------------------------------------------- | ------ | ----------------------------- |
+| [OkHttp](https://github.com/square/okhttp)          | 4.12.0 | HTTP 客户端（LLM 调用）       |
+| [Retrofit](https://github.com/square/retrofit)      | 2.11.0 | REST API 客户端               |
+| [NanoHTTPD](https://github.com/NanoHttpd/nanohttpd) | 2.3.1  | 局域网配置 & 调试 HTTP 服务器 |
 
 **存储 & 工具**
 
-| 依赖 | 版本 | 用途 |
-|------|------|------|
-| [MMKV](https://github.com/Tencent/MMKV) | 2.3.0 | 高性能本地键值存储 |
-| [Gson](https://github.com/google/gson) | 2.13.2 | JSON 序列化 |
-| [ZXing](https://github.com/zxing/zxing) | 3.5.3 | 二维码生成 |
+| 依赖                                                  | 版本   | 用途               |
+| ----------------------------------------------------- | ------ | ------------------ |
+| [MMKV](https://github.com/Tencent/MMKV)               | 2.3.0  | 高性能本地键值存储 |
+| [Gson](https://github.com/google/gson)                | 2.13.2 | JSON 序列化        |
+| [ZXing](https://github.com/zxing/zxing)               | 3.5.3  | 二维码生成         |
 | [UtilCode](https://github.com/Blankj/AndroidUtilCode) | 1.31.1 | Android 工具函数库 |
 
 **UI**
 
-| 依赖 | 版本 | 用途 |
-|------|------|------|
-| [Glide](https://github.com/bumptech/glide) | 5.0.5 | 图片加载 |
-| [EasyFloat](https://github.com/princekin-f/EasyFloat) | 2.0.4 | 悬浮窗 |
-| [MultiType](https://github.com/drakeet/MultiType) | 4.3.0 | RecyclerView 多类型适配器 |
+| 依赖                                                  | 版本  | 用途                      |
+| ----------------------------------------------------- | ----- | ------------------------- |
+| [Glide](https://github.com/bumptech/glide)            | 5.0.5 | 图片加载                  |
+| [EasyFloat](https://github.com/princekin-f/EasyFloat) | 2.0.4 | 悬浮窗                    |
+| [MultiType](https://github.com/drakeet/MultiType)     | 4.3.0 | RecyclerView 多类型适配器 |
 
 ## License
 
