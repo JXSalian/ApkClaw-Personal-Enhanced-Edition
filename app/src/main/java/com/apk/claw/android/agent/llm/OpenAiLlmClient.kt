@@ -28,6 +28,7 @@ class OpenAiLlmClient(
             .apiKey(config.apiKey)
             .modelName(config.modelName)
             .temperature(config.temperature)
+            .applyDeepSeekV4Compatibility()
         if (config.baseUrl.isNotEmpty()) {
             builder.baseUrl(config.baseUrl)
         }
@@ -40,10 +41,34 @@ class OpenAiLlmClient(
             .apiKey(config.apiKey)
             .modelName(config.modelName)
             .temperature(config.temperature)
+            .applyDeepSeekV4Compatibility()
         if (config.baseUrl.isNotEmpty()) {
             builder.baseUrl(config.baseUrl)
         }
         return builder.build()
+    }
+
+    private fun OpenAiChatModel.OpenAiChatModelBuilder.applyDeepSeekV4Compatibility():
+            OpenAiChatModel.OpenAiChatModelBuilder {
+        if (isDeepSeekV4Model()) {
+            customParameters(mapOf("thinking" to mapOf("type" to "disabled")))
+        }
+        return this
+    }
+
+    private fun OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder.applyDeepSeekV4Compatibility():
+            OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder {
+        if (isDeepSeekV4Model()) {
+            customParameters(mapOf("thinking" to mapOf("type" to "disabled")))
+        }
+        return this
+    }
+
+    private fun isDeepSeekV4Model(): Boolean {
+        return when (config.modelName.lowercase()) {
+            "deepseek-v4-pro", "deepseek-v4-flash" -> true
+            else -> false
+        }
     }
 
     override fun chat(messages: List<ChatMessage>, toolSpecs: List<ToolSpecification>): LlmResponse {
