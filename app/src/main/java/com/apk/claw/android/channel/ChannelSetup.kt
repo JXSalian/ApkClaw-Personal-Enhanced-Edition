@@ -34,6 +34,9 @@ class ChannelSetup(
                 if (channel == Channel.FEISHU && SessionMemoryCommandHandler.handleIfCommand(message, messageID)) {
                     return
                 }
+                if (channel == Channel.FEISHU && taskOrchestrator.enqueueOrHandleRunningTaskMessage(channel, message, messageID)) {
+                    return
+                }
                 if (!ClawAccessibilityService.isRunning()) {
                     ChannelManager.sendMessage(channel, app.getString(R.string.channel_msg_no_accessibility), messageID)
                     ChannelManager.flushMessages(channel)

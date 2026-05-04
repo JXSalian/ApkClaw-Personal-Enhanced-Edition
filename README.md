@@ -61,6 +61,14 @@ For a reproducible Windows debug build, use the project script instead of callin
 
 The script prefers `APKCLAW_JBR`, then `ANDROID_STUDIO_JBR`, then `JAVA_HOME`, and finally common Android Studio JBR locations. It only accepts a Java runtime that contains both `bin/java.exe` and `bin/jlink.exe`, then pins Gradle to that JBR and disables Java auto-detection for the current build.
 
+## Recent Changes
+
+- Home screen now shows the app version.
+- `maxIterations` is configurable in-app from the LLM config page instead of being hard-coded.
+- Added a local Session & Memory system with separate toggles for session context and condensed memory.
+- Session & Memory settings now support previewing and editing the selected session's name, recent session records, condensed summary, habit notes, and error lessons.
+- Feishu supports text commands to toggle memory/session behavior and switch or create sessions.
+
 ## Core Execution Flow
 
 1. **User** sends a natural language message through any connected channel
@@ -72,7 +80,7 @@ The script prefers `APKCLAW_JBR`, then `ANDROID_STUDIO_JBR`, then `JAVA_HOME`, a
    - Extracts tool calls from LLM response
    - Executes tools via **ToolRegistry** → **ClawAccessibilityService**
    - Feeds tool results back to LLM
-   - Loops until the `finish` tool is called or max iterations (40) are reached
+   - Loops until the `finish` tool is called or the configured max iterations limit is reached
 5. **Result** is sent back to the user through the same channel
 
 ## Agent System
@@ -105,8 +113,59 @@ Both streaming and non-streaming modes are supported. The HTTP layer uses a cust
 - `modelName`: User-selectable
 - `provider`: `OPENAI` (default) or `ANTHROPIC`
 - `temperature`: 0.1 (deterministic output)
-- `maxIterations`: 40
+- `maxIterations`: User-configurable in the LLM config page (default 60)
 - `streaming`: Configurable (default: off)
+
+## Session & Memory
+
+The app now has a local persistent Session & Memory feature stored on-device.
+
+- **Session context**: stores recent session task records and can be injected into future tasks as short-term context.
+- **Condensed memory**: stores longer-lived condensed summary, habit notes, and error lessons.
+- Session context and condensed memory have separate switches, so you can enable either one independently to control token usage.
+- The Session & Memory settings page supports:
+  - enabling/disabling session context
+  - enabling/disabling condensed memory
+  - selecting the current session
+  - creating a new session
+  - previewing and editing session name, recent tasks, condensed summary, habit notes, and error lessons
+
+### Persisted Session Context vs In-Flight Runtime State
+
+- **Persisted session context** means content already saved into local session storage, such as chat history, recent task records, condensed summary, habit notes, and session prompt. After the current task stops, a new task can still load and reuse this data.
+- **In-flight runtime state** means transient execution state that exists only inside the currently running agent session, such as the latest screen observation not yet written back, the active tool-call chain, the current step-by-step execution flow, and the paused execution point. This state is not persisted as a resumable runtime snapshot.
+
+The practical difference is:
+
+- A new task can inherit what has already been written to storage, so it still knows the prior conversation and task history.
+- A new task cannot inherit the exact unfinished execution scene of the previous run, so it does not continue from the middle of the prior tool chain. It starts a fresh run and replans from the saved context.
+
+### Pause and Add Instruction vs Stop and Send Again
+
+- **Pause and add instruction** pauses the current task, enqueues the new instruction into the same running agent, and then resumes execution. This preserves the in-flight runtime state, so it is better when you want the agent to keep going from the current execution path.
+- **Stop and send again** fully cancels the current task first. Your next message starts a new task that only reads persisted session context and does not keep the prior run's transient execution state. This is better when you want to abandon the current path and start over with the saved history only.
+
+Current limitation: sessions and memories are local to the device and not yet isolated per remote user identity.
+
+## Feishu Commands
+
+Feishu can control the Session & Memory feature via plain text commands before normal task execution starts:
+
+```text
+/memory on
+/memory off
+/memory status
+
+/session on
+/session off
+/session status
+/session list
+/session new Daily WeChat Ops
+/session use session-default
+/session current
+```
+
+These commands are intercepted before the agent task lock is acquired, so they do not consume a normal task run.
 
 ### LangChain4j Bridge
 

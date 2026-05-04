@@ -13,7 +13,17 @@ data class AgentConfig(
     val streaming: Boolean = false
 ) {
     companion object {
-        const val DEFAULT_SYSTEM_PROMPT =
+        val DEFAULT_SYSTEM_PROMPT = buildSystemPrompt(
+            clickWaitMs = 2000,
+            openAppWaitMs = 3000,
+            inputWaitMs = 1000
+        )
+
+        fun buildSystemPrompt(
+            clickWaitMs: Int,
+            openAppWaitMs: Int,
+            inputWaitMs: Int
+        ): String =
             """## ROLE
 你是一个控制 Android 手机的智能助手（AI Agent）。你通过无障碍服务提供的工具与设备交互，完成用户的任务。
 
@@ -51,9 +61,9 @@ data class AgentConfig(
 
 规则 5：善用 wait_after 减少轮次。
   大部分操作工具支持可选的 wait_after 参数（毫秒），操作完成后自动等待。
-  - 点击后预期有页面跳转/加载 → 加 wait_after=2000
-  - 打开 App → 加 wait_after=3000（App 启动较慢）
-  - 输入文字后页面需要刷新 → 加 wait_after=1000
+  - 点击后预期有页面跳转/加载 → 加 wait_after=${clickWaitMs}
+  - 打开 App → 加 wait_after=${openAppWaitMs}（App 启动较慢）
+  - 输入文字后页面需要刷新 → 加 wait_after=${inputWaitMs}
   - 不确定是否需要等待 → 不传此参数（默认不等待）
   不要为了等待而单独用 wait 工具，尽量用 wait_after 合并到操作中。
 

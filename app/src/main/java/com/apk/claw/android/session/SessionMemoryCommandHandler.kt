@@ -28,16 +28,18 @@ object SessionMemoryCommandHandler {
         return when (action) {
             "on", "enable", "开启" -> {
                 SessionMemoryManager.setMemoryEnabled(true)
-                "记忆功能已开启，当前会话：${SessionMemoryManager.getCurrentSession()?.name ?: "默认会话"}"
+                "全局记忆已开启，当前会话：${SessionMemoryManager.getCurrentSession()?.name ?: "默认会话"}"
             }
             "off", "disable", "关闭" -> {
                 SessionMemoryManager.setMemoryEnabled(false)
-                "记忆功能已关闭。"
+                "全局记忆已关闭。"
             }
             "status", "状态", null -> {
                 val current = SessionMemoryManager.getCurrentSession()
                 val enabledText = if (SessionMemoryManager.isMemoryEnabled()) "开启" else "关闭"
-                "记忆状态：$enabledText\n当前会话：${current?.name ?: "默认会话"} (${current?.id ?: "-"})"
+                val summary = SessionMemoryManager.getMemoryText("", SessionMemoryManager.FIELD_GLOBAL_MEMORY)
+                val promptEnabled = if (SessionMemoryManager.isGlobalPromptEnabled()) "开启" else "关闭"
+                "全局记忆：$enabledText\n全局Prompt：$promptEnabled\n当前会话：${current?.name ?: "默认会话"} (${current?.id ?: "-"})\n全局记忆内容：${summary.ifBlank { "暂无内容。" }}"
             }
             else -> buildHelpText()
         }
@@ -98,7 +100,7 @@ object SessionMemoryCommandHandler {
                 if (current == null) {
                     "当前没有可用会话。"
                 } else {
-                    "当前会话：${current.name} (${current.id})\n${current.condensedSummary.ifBlank { "暂无凝练记忆。" }}"
+                    "当前会话：${current.name} (${current.id})\n消息数：${SessionMemoryManager.getSessionMessages(current.id).size}"
                 }
             }
             else -> buildHelpText()

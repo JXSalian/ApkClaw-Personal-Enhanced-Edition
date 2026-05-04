@@ -39,6 +39,10 @@ class SettingsActivity : BaseActivity() {
         viewModel.refresh()
     }
 
+    private val waitTimingLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
+        viewModel.refresh()
+    }
+
     // 注册通道配置结果回调
     private val channelConfigLauncher = ChannelConfigActivity.registerLauncher(this) { result ->
         result?.let {
@@ -137,9 +141,17 @@ class SettingsActivity : BaseActivity() {
             leadingIcon = R.drawable.ic_storage,
             title = getString(R.string.menu_session_memory),
             onClick = { viewModel.onMenuItemClick(SettingsViewModel.MenuAction.SESSION_MEMORY) },
-            showDivider = false
+            showDivider = true
         )
         menuItems[SettingsViewModel.MenuAction.SESSION_MEMORY.name]?.setLeadingIconColor(getColor(R.color.colorTextPrimary))
+
+        menuItems[SettingsViewModel.MenuAction.WAIT_TIMING.name] = modelGroup.addMenuItem(
+            leadingIcon = R.drawable.ic_settings,
+            title = getString(R.string.menu_wait_timing),
+            onClick = { viewModel.onMenuItemClick(SettingsViewModel.MenuAction.WAIT_TIMING) },
+            showDivider = false
+        )
+        menuItems[SettingsViewModel.MenuAction.WAIT_TIMING.name]?.setLeadingIconColor(getColor(R.color.colorTextPrimary))
     }
 
     private fun observeViewModel() {
@@ -245,6 +257,9 @@ class SettingsActivity : BaseActivity() {
                             }
                             SettingsViewModel.MenuAction.SESSION_MEMORY -> {
                                 sessionMemoryLauncher.launch(Intent(this@SettingsActivity, SessionMemoryActivity::class.java))
+                            }
+                            SettingsViewModel.MenuAction.WAIT_TIMING -> {
+                                waitTimingLauncher.launch(Intent(this@SettingsActivity, WaitTimingSettingsActivity::class.java))
                             }
                             null -> {}
                             else -> {}
