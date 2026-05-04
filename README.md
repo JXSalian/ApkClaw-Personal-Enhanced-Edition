@@ -71,6 +71,7 @@ Size: 53,239,523 bytes
 
 <p align="center">
   <img src="Screenshots/session-chat.jpg" width="240" alt="Session chat page" />
+  <img src="Screenshots/session-condensed-memory.jpg" width="240" alt="Condensed memory page" />
   <img src="Screenshots/wait-timing.jpg" width="240" alt="Wait timing settings" />
 </p>
 
