@@ -63,11 +63,57 @@ The script prefers `APKCLAW_JBR`, then `ANDROID_STUDIO_JBR`, then `JAVA_HOME`, a
 
 ## Recent Changes
 
-- Home screen now shows the app version.
+- Home screen now shows the app version. The current version is `0.0.4`.
 - `maxIterations` is configurable in-app from the LLM config page instead of being hard-coded.
-- Added a local Session & Memory system with separate toggles for session context and condensed memory.
-- Session & Memory settings now support previewing and editing the selected session's name, recent session records, condensed summary, habit notes, and error lessons.
+- Added an in-app wait timing settings page for global scale factor, tap wait, open-app wait, input wait, and restore-defaults.
+- The agent system prompt now uses the current effective wait recommendations instead of a fixed static description.
+- Added a local Session & Memory system with separate toggles for session context, global memory, and global prompt.
+- Session & Memory settings now support previewing and editing the selected session's name, recent session records, condensed summary, habit notes, and session prompt.
+- The multi-session chat page now supports direct messaging, stopping the current task, editing session-level fields, and ongoing runtime status refresh.
+- The floating pause input is now handled as an overlay interaction with resume, stop, and follow-up actions plus clearer feedback.
 - Feishu supports text commands to toggle memory/session behavior and switch or create sessions.
+
+## Development Journey
+
+This project has been evolving from a working Android automation demo into a tool that is usable over longer sessions, easier to debug, and safer to iterate on. The recent development path can be summarized in five stages:
+
+1. **Reproducible build pipeline**: stabilize Windows debug builds with project-owned scripts and consistent JBR discovery.
+2. **Configurable agent runtime**: move core runtime parameters such as `maxIterations` and model settings out of hard-coded defaults and into the app UI.
+3. **Session and memory foundation**: introduce persistent session context, condensed memory, global memory, and global prompt with editing and multi-session switching.
+4. **Pause and follow-up interaction redesign**: add runtime pause/follow-up behavior so users can correct the task without always cancelling and restarting.
+5. **Wait strategy configuration**: convert previously hard-coded waiting advice into actual user-controlled runtime settings and reduce contamination from historical timing notes.
+
+## Key Problems and Solution Paths
+
+### 1. Unstable local builds
+
+- **Problem**: Windows builds depended on manually passing Java settings and a non-portable Android Studio JBR path.
+- **Solution path**: move build entry into repo-owned scripts and auto-detect a valid JBR before invoking Gradle.
+
+### 2. Hard-coded agent behavior
+
+- **Problem**: iteration limits, wait strategy, and model settings were too static to tune safely.
+- **Solution path**: route runtime configuration through app settings and rebuild the effective `AgentConfig` dynamically.
+
+### 3. Tasks had no durable conversational continuity
+
+- **Problem**: once a task ended, there was no reliable way to preserve the useful parts of the interaction while separating them from transient execution state.
+- **Solution path**: split persisted session context from in-flight runtime state, then build session/memory injection on top of that boundary.
+
+### 4. Historical notes could pollute new runs
+
+- **Problem**: older session records could keep leaking outdated wait guidance into new tasks after the user changed current timing settings.
+- **Solution path**: move current timing guidance entirely into the system prompt and sanitize injected session content before it is appended to the task prompt.
+
+### 5. Mid-task correction was too disruptive
+
+- **Problem**: users often had to stop and restart tasks instead of nudging a running task in place.
+- **Solution path**: add a floating pause overlay with explicit resume, stop, and follow-up actions plus clearer feedback semantics.
+
+### 6. Small UI issues were blocking repeated use
+
+- **Problem**: scroll behavior, crowded labels, mixed-language strings, and awkward button placement made the app feel less reliable during daily use.
+- **Solution path**: treat these as product-level usability issues rather than cosmetic polish and iterate on them continuously.
 
 ## Core Execution Flow
 

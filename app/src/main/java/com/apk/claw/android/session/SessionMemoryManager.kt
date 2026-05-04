@@ -410,9 +410,15 @@ object SessionMemoryManager {
     fun recordCancellation(sessionId: String, userTask: String, reason: String, sessionTranscript: String) {
         val state = loadState()
         val session = state.sessions.firstOrNull { it.id == sessionId } ?: return
+        val normalizedTask = normalizeTask(userTask)
         if (state.sessionEnabled) {
             session.sessionTranscript = deriveTranscript(session, sessionTranscript)
         }
+        session.condensedSummary = appendDatedBullet(
+            session.condensedSummary,
+            todayTag(),
+            "任务“$normalizedTask”已取消：${sanitizeLine(reason)}"
+        )
         session.updatedAt = System.currentTimeMillis()
         saveState(state)
     }
@@ -572,16 +578,22 @@ object SessionMemoryManager {
 
     private fun sanitizeInjectedPromptContext(text: String): String {
         return text.lineSequence()
-            .map { it.trimEnd() }
+            .map { sanitizeWaitAfterValue(it).trimEnd() }
             .filterNot { line ->
                 val normalized = line.trim().lowercase(Locale.getDefault())
-                normalized.contains("wait_after") ||
-                    normalized.contains("缩放因子") ||
+                normalized.contains("缩放因子") ||
                     normalized.contains("推荐等待") ||
                     normalized.contains("recommended wait")
             }
             .joinToString("\n")
             .trim()
+    }
+
+    private fun sanitizeWaitAfterValue(line: String): String {
+        return line
+            .replace(Regex("""(?i)(wait_after\s*=\s*)\d+(?:\.\d+)?"""), "$1")
+            .replace(Regex("""(?i)(wait_after\s*:\s*)\d+(?:\.\d+)?"""), "$1")
+            .replace(Regex("""(?i)(wait_after\s+)\d+(?:\.\d+)?"""), "$1")
     }
 
     private fun buildPromptSection(title: String, content: String, limit: Int): String? {
